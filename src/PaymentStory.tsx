@@ -1,4 +1,4 @@
-import type { PaymentDetail, PaymentHistoryItem, PaymentType } from "./types";
+import type { AiDriver, PaymentDetail, PaymentHistoryItem, PaymentType } from "./types";
 
 function money(currency: string, amount: number) {
   return `${currency} ${amount.toFixed(2)}`;
@@ -12,6 +12,76 @@ function typeLabel(type: PaymentType) {
 
 function typeClass(type: PaymentType) {
   return `tag tag-type-${type}`;
+}
+
+function AiDecision({ item }: { item: PaymentHistoryItem }) {
+  const d = item.details;
+  const action = String(d.ai_action ?? "—");
+  const score = Number(d.ai_score ?? 0);
+  const bar = d.ai_bar == null ? null : Number(d.ai_bar);
+  const gate = d.ai_gate ? String(d.ai_gate) : null;
+  const card = d.ai_card ? String(d.ai_card) : null;
+  const declinesLeft = d.ai_declines_left == null ? null : Number(d.ai_declines_left);
+  const drivers = Array.isArray(d.ai_drivers) ? (d.ai_drivers as AiDriver[]) : [];
+  const nextAction = d.ai_next_best_action ? String(d.ai_next_best_action) : null;
+  const reason = String(d.ai_reason ?? "").split(" Drivers:")[0];
+  const charged = action === "charge" || action === "partial";
+
+  return (
+    <div className="ai-decision">
+      <div className="ai-chips">
+        <span className={`tag tag-${action}`}>{charged ? "Charge" : "Skip"}</span>
+        {card ? <span className="ai-chip">{card}</span> : null}
+        {declinesLeft != null ? (
+          <span className="ai-chip">
+            {declinesLeft} decline{declinesLeft === 1 ? "" : "s"} left this month
+          </span>
+        ) : null}
+      </div>
+
+      {gate ? (
+        <p className="ai-gate">
+          <strong>Hard rule:</strong> {gate}. The model isn’t asked.
+        </p>
+      ) : (
+        <div className="prob">
+          <div className="prob-head">
+            <span>
+              Chance this charge succeeds: <strong>{Math.round(score * 100)}%</strong>
+            </span>
+            {bar != null ? <span className="muted">needs {Math.round(bar * 100)}%</span> : null}
+          </div>
+          <div
+            className="prob-track"
+            role="img"
+            aria-label={`P(success) ${Math.round(score * 100)}%${bar != null ? `, bar ${Math.round(bar * 100)}%` : ""}`}
+          >
+            <span className={`prob-fill ${charged ? "go" : "stop"}`} style={{ width: `${Math.max(score * 100, 1.5)}%` }} />
+            {bar != null ? <span className="prob-bar" style={{ left: `${bar * 100}%` }} /> : null}
+          </div>
+        </div>
+      )}
+
+      {gate ? null : <p className="ai-reason">{reason}</p>}
+
+      {drivers.length ? (
+        <div className="ai-drivers">
+          <span className="muted">Why:</span>
+          {drivers.map((driver) => (
+            <span key={driver.feature} className={`driver ${driver.direction === "+" ? "up" : "down"}`}>
+              {driver.direction === "+" ? "▲" : "▼"} {driver.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {nextAction ? (
+        <p className="ai-next">
+          <strong>Next best action:</strong> {nextAction}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 type Props = {
@@ -53,14 +123,8 @@ export function PaymentStory({ detail, visibleSteps, onClose }: Props) {
           },
           {
             title: "2 · AI decision",
-            body: (
-              <>
-                AI reviewed <strong>overdue only</strong> (never upcoming) and chose{" "}
-                <strong>{String(smart?.details.ai_action ?? "—")}</strong>
-                {smart?.details.ai_reason ? <> — {String(smart.details.ai_reason)}</> : null}.
-              </>
-            ),
-            meta: `Score ${Number(smart?.details.ai_score ?? 0).toFixed(2)}`,
+            body: smart ? <AiDecision item={smart} /> : <>No AI decision recorded.</>,
+            meta: "AI reviewed overdue only — never upcoming installments.",
             highlight: true,
           },
           {
@@ -186,7 +250,7 @@ export function PaymentStory({ detail, visibleSteps, onClose }: Props) {
               <div className="story-rail" aria-hidden />
               <div className="story-copy">
                 <h4>{step.title}</h4>
-                <p>{step.body}</p>
+                <div className="story-body">{step.body}</div>
                 {step.meta ? <p className="muted meta">{step.meta}</p> : null}
               </div>
             </li>

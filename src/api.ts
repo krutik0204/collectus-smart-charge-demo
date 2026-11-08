@@ -3,6 +3,7 @@ import type {
   CronRunResult,
   Customer,
   ManualPayResult,
+  MonthBacktest,
   Order,
   PaymentDetail,
   PaymentHistoryItem,
@@ -60,6 +61,8 @@ export const runCollectionsCron = (customerId?: string, scheduledFor = "09:00") 
       scheduled_for: scheduledFor,
     }),
   });
+
+export const fetchInsights = () => request<MonthBacktest>("/api/insights/backtest");
 
 export const resetDemo = () =>
   request<{ status: string }>("/api/admin/reset", { method: "POST" });

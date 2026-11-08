@@ -11,6 +11,8 @@ import {
   resetDemo,
   runCollectionsCron,
 } from "./api";
+import { cardDetails, cardSummary, declineLimit, networkName } from "./cards";
+import { Insights } from "./Insights";
 import { PaymentStory } from "./PaymentStory";
 import type {
   Customer,
@@ -259,7 +261,10 @@ export default function App() {
                   disabled={loading}
                   onClick={() => loginAs(account.customer_id)}
                 >
-                  <strong>{account.name}</strong>
+                  <span className="account-who">
+                    <strong>{account.name}</strong>
+                    <span className="muted account-card">{cardSummary(account)}</span>
+                  </span>
                   <span className="muted">Continue</span>
                 </button>
               ))}
@@ -297,6 +302,7 @@ export default function App() {
             ["shop", "Shop"],
             ["payments", "My payments"],
             ["history", "Payment history"],
+            ["insights", "Why AI?"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -341,6 +347,25 @@ export default function App() {
             <div className="stat">
               <strong>{history.length}</strong>
               <span>History</span>
+            </div>
+          </div>
+          <div className="card-chip" aria-label="Card on file">
+            <div className={`card-face card-${customer.card_network ?? "mada"}`}>
+              <span className="card-network">{networkName(customer)}</span>
+              <span className="card-kind">{cardDetails(customer)}</span>
+            </div>
+            <div className="declines">
+              <div className="declines-dots" aria-hidden>
+                {Array.from({ length: declineLimit(customer) }, (_, i) => (
+                  <span key={i} className={`dot ${i < (customer.declines_left ?? declineLimit(customer)) ? "on" : ""}`} />
+                ))}
+              </div>
+              <span>
+                <strong>
+                  {customer.declines_left ?? declineLimit(customer)} of {declineLimit(customer)}
+                </strong>{" "}
+                card declines left this month
+              </span>
             </div>
           </div>
         </div>
@@ -507,6 +532,19 @@ export default function App() {
                       {item.product_name ? `${item.merchant} · ${item.product_name} · ` : ""}
                       {item.status.replaceAll("_", " ")}
                     </div>
+                    {item.payment_type === "smart_autocharge" && item.details.ai_action ? (
+                      <div className="history-ai">
+                        <span className={`tag tag-${String(item.details.ai_action)}`}>
+                          AI: {String(item.details.ai_action)}
+                        </span>
+                        <span className="muted">
+                          {item.details.ai_gate
+                            ? "hard rule"
+                            : `${Math.round(Number(item.details.ai_score ?? 0) * 100)}% likely`}
+                          {item.details.ai_card ? ` · ${String(item.details.ai_card)}` : ""}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="history-side">
                     <div className="history-amount">{money(item.currency, item.amount)}</div>
@@ -531,6 +569,8 @@ export default function App() {
           )}
         </section>
       ) : null}
+
+      {tab === "insights" ? <Insights /> : null}
 
       {selectedProduct ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setSelectedProduct(null)}>

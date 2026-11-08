@@ -1,6 +1,6 @@
 export type DecisionAction = "charge" | "partial" | "skip";
 export type InstallmentStatus = "paid" | "upcoming" | "due" | "overdue";
-export type Tab = "shop" | "payments" | "history";
+export type Tab = "shop" | "payments" | "history" | "insights";
 export type PaymentType = "manual_repayment" | "normal_autocharge" | "smart_autocharge";
 
 export interface Customer {
@@ -15,6 +15,10 @@ export interface Customer {
   overdue_amount: number;
   days_overdue: number;
   last_activity_at?: string | null;
+  declines_left?: number;
+  card_network?: "mada" | "visa" | "mastercard";
+  card_token?: "plastic" | "apple_pay";
+  card_funding?: "debit" | "credit" | "prepaid";
 }
 
 export interface Product {
@@ -137,4 +141,36 @@ export interface PaymentDetail {
   event_id: string;
   history: PaymentHistoryItem[];
   orchestration: OrchestrationResult | null;
+}
+
+export interface AiDriver {
+  feature: string;
+  label: string;
+  value: number;
+  impact: number;
+  direction: "+" | "-";
+}
+
+export interface MonthStrategy {
+  strategy: string;
+  attempts: number;
+  failed_attempts: number;
+  success_rate: number;
+  recovered: number;
+  recovery_rate: number;
+  fail_fees: number;
+  customers_fully_cleared: number;
+  customers_out_of_declines: number;
+  avg_day_first_collection: number | null;
+}
+
+export interface MonthBacktest {
+  customers: number;
+  days: number;
+  decline_budget: number;
+  decline_budget_visa_mc: number;
+  total_overdue: number;
+  strategies: MonthStrategy[];
+  summary: string;
+  note: string;
 }
