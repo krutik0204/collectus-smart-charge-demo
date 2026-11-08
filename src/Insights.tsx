@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchInsights } from "./api";
-import type { MonthBacktest, MonthStrategy } from "./types";
+import { fetchInsights, fetchModel } from "./api";
+import type { ModelInfo, MonthBacktest, MonthStrategy } from "./types";
 
 const AI_STRATEGY = "charge_on_repayment_plus_ai_gated_cron";
 
@@ -70,6 +70,112 @@ function BarChart({ title, subtitle, rows, value, format, tip }: BarChartProps) 
         })}
       </div>
     </figure>
+  );
+}
+
+const FEATURE_NAMES: Record<string, string> = {
+  pm_health: "Card health",
+  recent_success: "Recent payment success",
+  fails_7d: "Failed attempts (7 days)",
+  days_overdue: "Days overdue",
+  repayment_strength: "Amount just repaid",
+  charge_fraction: "Size of the charge",
+  trigger_event: "Right after a repayment",
+  payday_window: "Payday window (27th–3rd)",
+  network_visa: "Visa card (vs Mada)",
+  network_mastercard: "Mastercard (vs Mada)",
+  apple_pay: "Apple Pay",
+  funding_credit: "Credit card",
+  funding_prepaid: "Prepaid card",
+};
+
+function ModelLearned() {
+  const [model, setModel] = useState<ModelInfo | null>(null);
+  useEffect(() => {
+    fetchModel().then(setModel).catch(() => setModel(null));
+  }, []);
+  if (!model) return null;
+  const rows = Object.entries(model.coefficients)
+    .map(([feature, coef]) => ({ feature, coef }))
+    .sort((a, b) => Math.abs(b.coef) - Math.abs(a.coef));
+  const max = Math.max(...rows.map((r) => Math.abs(r.coef))) || 1;
+  return (
+    <figure className="insight-chart learned">
+      <figcaption>
+        <h3>What the model learned</h3>
+        <p className="muted">
+          How strongly each signal moves the chance of success (standardized weights). AUC{" "}
+          {model.metrics.auc?.toFixed(2)} on held-out data.
+        </p>
+      </figcaption>
+      <div className="bar-list" role="list">
+        {rows.map((row) => (
+          <div
+            key={row.feature}
+            role="listitem"
+            className="bar-row learned-row"
+            aria-label={`${FEATURE_NAMES[row.feature] ?? row.feature}: ${row.coef > 0 ? "raises" : "lowers"} the chance`}
+          >
+            <span className="bar-label">{FEATURE_NAMES[row.feature] ?? row.feature}</span>
+            <span className="bar-track">
+              <span className="bar-fill" style={{ width: `${(Math.abs(row.coef) / max) * 70}%` }} />
+              <span className={`bar-value effect ${row.coef > 0 ? "up" : "down"}`}>
+                {row.coef > 0 ? "▲ raises" : "▼ lowers"}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+function ImpactCalculator({ data }: { data: MonthBacktest }) {
+  const [customers, setCustomers] = useState(100000);
+  const [avgOverdue, setAvgOverdue] = useState(300);
+  const by = Object.fromEntries(data.strategies.map((s) => [s.strategy, s]));
+  const ai = by[AI_STRATEGY];
+  const cron = by.cron_only;
+  const total = customers * avgOverdue;
+  const extra = total * (ai.recovery_rate - cron.recovery_rate);
+  const fewerFails = ((cron.failed_attempts - ai.failed_attempts) / data.customers) * customers;
+  const sar = (v: number) =>
+    v >= 1_000_000 ? `SAR ${(v / 1_000_000).toFixed(1)}M` : `SAR ${Math.round(v / 1000)}k`;
+  return (
+    <div className="impact">
+      <div className="impact-inputs">
+        <h3>What could this mean for a portfolio?</h3>
+        <label className="field">
+          <span className="field-head">
+            <span>Customers in overdue</span>
+            <strong>{customers.toLocaleString()}</strong>
+          </span>
+          <input type="range" min={10000} max={500000} step={10000} value={customers} onChange={(e) => setCustomers(Number(e.target.value))} />
+        </label>
+        <label className="field">
+          <span className="field-head">
+            <span>Average overdue per customer</span>
+            <strong>SAR {avgOverdue}</strong>
+          </span>
+          <input type="range" min={50} max={2000} step={50} value={avgOverdue} onChange={(e) => setAvgOverdue(Number(e.target.value))} />
+        </label>
+      </div>
+      <div className="impact-outputs">
+        <div className="kpi">
+          <strong>+{sar(extra)}</strong>
+          <span>more collected per month than today’s cron</span>
+        </div>
+        <div className="kpi">
+          <strong>−{Math.round(fewerFails).toLocaleString()}</strong>
+          <span>failed charge attempts per month</span>
+        </div>
+        <p className="muted impact-note">
+          Applies the simulation’s recovery rates ({pct(cron.recovery_rate)} → {pct(ai.recovery_rate)} of
+          overdue in 30 days) and failed attempts per customer to your inputs. Illustrative only — not
+          Tamara data.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -200,6 +306,10 @@ export function Insights() {
           />
         </div>
       )}
+
+      <ImpactCalculator data={data} />
+
+      <ModelLearned />
 
       <div className="insight-notes">
         <p>

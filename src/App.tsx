@@ -13,6 +13,7 @@ import {
 } from "./api";
 import { cardDetails, cardSummary, declineLimit, networkName } from "./cards";
 import { Insights } from "./Insights";
+import { Playground } from "./Playground";
 import { PaymentStory } from "./PaymentStory";
 import type {
   Customer,
@@ -303,6 +304,7 @@ export default function App() {
             ["payments", "My payments"],
             ["history", "Payment history"],
             ["insights", "Why AI?"],
+            ["try", "Try the AI"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -571,6 +573,8 @@ export default function App() {
       ) : null}
 
       {tab === "insights" ? <Insights /> : null}
+
+      {tab === "try" ? <Playground /> : null}
 
       {selectedProduct ? (
         <div className="modal-backdrop" role="presentation" onClick={() => setSelectedProduct(null)}>

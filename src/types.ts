@@ -1,6 +1,6 @@
 export type DecisionAction = "charge" | "partial" | "skip";
 export type InstallmentStatus = "paid" | "upcoming" | "due" | "overdue";
-export type Tab = "shop" | "payments" | "history" | "insights";
+export type Tab = "shop" | "payments" | "history" | "insights" | "try";
 export type PaymentType = "manual_repayment" | "normal_autocharge" | "smart_autocharge";
 
 export interface Customer {
@@ -173,4 +173,38 @@ export interface MonthBacktest {
   strategies: MonthStrategy[];
   summary: string;
   note: string;
+}
+
+export interface PlaygroundInput {
+  event_type: "repayment.succeeded" | "schedule.due";
+  overdue_amount: number;
+  amount_paid: number;
+  days_overdue: number;
+  pm_health: number;
+  fails_7d: number;
+  recent_success: number;
+  declines_left: number;
+  card_network: "mada" | "visa" | "mastercard";
+  card_token: "plastic" | "apple_pay";
+  card_funding: "debit" | "credit" | "prepaid";
+}
+
+export interface PlaygroundDecision {
+  action: DecisionAction;
+  amount: number;
+  score: number;
+  reason: string;
+  next_best_action: string | null;
+  drivers: AiDriver[];
+  card: string | null;
+  declines_left: number | null;
+  min_success_prob_applied: number | null;
+  gate: string | null;
+}
+
+export interface ModelInfo {
+  version: string;
+  features: string[];
+  coefficients: Record<string, number>;
+  metrics: Record<string, number>;
 }

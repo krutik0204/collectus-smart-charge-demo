@@ -1378,3 +1378,157 @@ th {
     left: 0;
   }
 }
+
+/* ---------- Impact calculator ---------- */
+.impact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #fcfaff;
+  border: 1px solid var(--line);
+}
+
+.impact h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.impact-outputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.impact-outputs .kpi {
+  background: #fff;
+}
+
+.impact-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+/* ---------- Form fields (playground, calculator) ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.85rem;
+}
+
+.field-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.field input[type="range"] {
+  width: 100%;
+  accent-color: var(--lavender);
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.segment button {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.segment button.active {
+  background: var(--lavender);
+  border-color: var(--lavender);
+  color: #fff;
+}
+
+/* ---------- What the model learned ---------- */
+.insight-chart.learned {
+  margin-top: 1rem;
+}
+
+.bar-value.effect {
+  color: var(--muted);
+}
+
+/* ---------- Playground ---------- */
+.playground .panel-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.playground-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.playground-form {
+  padding: 1rem;
+  border-radius: 16px;
+  background: #fcfaff;
+  border: 1px solid var(--line);
+}
+
+.playground-result {
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(150, 0, 241, 0.25);
+  box-shadow: var(--shadow);
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+}
+
+.playground-verdict {
+  margin: 0.2rem 0 0.7rem;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--zingy);
+}
+
+.playground-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .impact,
+  .impact-outputs,
+  .playground-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .playground-result {
+    position: static;
+  }
+}
