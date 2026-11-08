@@ -3,6 +3,10 @@ import type {
   CronRunResult,
   Customer,
   ManualPayResult,
+  ModelInfo,
+  MonthBacktest,
+  PlaygroundDecision,
+  PlaygroundInput,
   Order,
   PaymentDetail,
   PaymentHistoryItem,
@@ -59,6 +63,14 @@ export const runCollectionsCron = (customerId?: string, scheduledFor = "09:00") 
       customer_id: customerId ?? null,
       scheduled_for: scheduledFor,
     }),
+  });
+
+export const fetchInsights = () => request<MonthBacktest>("/api/insights/backtest");
+export const fetchModel = () => request<ModelInfo>("/api/insights/model");
+export const playgroundDecide = (input: PlaygroundInput) =>
+  request<PlaygroundDecision>("/api/playground/decide", {
+    method: "POST",
+    body: JSON.stringify(input),
   });
 
 export const resetDemo = () =>

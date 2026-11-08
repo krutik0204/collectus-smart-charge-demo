@@ -1,4 +1,5 @@
-import type { PaymentDetail, PaymentHistoryItem, PaymentType } from "./types";
+import { AiDecisionView } from "./AiDecisionView";
+import type { AiDriver, PaymentDetail, PaymentHistoryItem, PaymentType } from "./types";
 
 function money(currency: string, amount: number) {
   return `${currency} ${amount.toFixed(2)}`;
@@ -12,6 +13,23 @@ function typeLabel(type: PaymentType) {
 
 function typeClass(type: PaymentType) {
   return `tag tag-type-${type}`;
+}
+
+function AiDecision({ item }: { item: PaymentHistoryItem }) {
+  const d = item.details;
+  return (
+    <AiDecisionView
+      action={String(d.ai_action ?? "—")}
+      score={Number(d.ai_score ?? 0)}
+      bar={d.ai_bar == null ? null : Number(d.ai_bar)}
+      gate={d.ai_gate ? String(d.ai_gate) : null}
+      card={d.ai_card ? String(d.ai_card) : null}
+      declinesLeft={d.ai_declines_left == null ? null : Number(d.ai_declines_left)}
+      drivers={Array.isArray(d.ai_drivers) ? (d.ai_drivers as AiDriver[]) : []}
+      nextAction={d.ai_next_best_action ? String(d.ai_next_best_action) : null}
+      reason={String(d.ai_reason ?? "")}
+    />
+  );
 }
 
 type Props = {
@@ -53,14 +71,8 @@ export function PaymentStory({ detail, visibleSteps, onClose }: Props) {
           },
           {
             title: "2 · AI decision",
-            body: (
-              <>
-                AI reviewed <strong>overdue only</strong> (never upcoming) and chose{" "}
-                <strong>{String(smart?.details.ai_action ?? "—")}</strong>
-                {smart?.details.ai_reason ? <> — {String(smart.details.ai_reason)}</> : null}.
-              </>
-            ),
-            meta: `Score ${Number(smart?.details.ai_score ?? 0).toFixed(2)}`,
+            body: smart ? <AiDecision item={smart} /> : <>No AI decision recorded.</>,
+            meta: "AI reviewed overdue only — never upcoming installments.",
             highlight: true,
           },
           {
@@ -186,7 +198,7 @@ export function PaymentStory({ detail, visibleSteps, onClose }: Props) {
               <div className="story-rail" aria-hidden />
               <div className="story-copy">
                 <h4>{step.title}</h4>
-                <p>{step.body}</p>
+                <div className="story-body">{step.body}</div>
                 {step.meta ? <p className="muted meta">{step.meta}</p> : null}
               </div>
             </li>
